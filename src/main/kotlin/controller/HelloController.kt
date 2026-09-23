@@ -11,6 +11,8 @@ import java.time.Clock
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.ZoneOffset
+
 
 
 @Controller
@@ -30,7 +32,7 @@ class HelloController(
         model: Model,
         @RequestParam(defaultValue = "") name: String
     ): String {
-        val time = LocalTime.now(clock).hour
+        val time = clock.instant().atZone(ZoneOffset.UTC).hour
         var timeGreeting = when (time) {
             in 6..<13 -> "morning"
             in 13..<21 -> "afternoon"
@@ -57,7 +59,7 @@ class HelloApiController (
      */
     @GetMapping("/api/hello", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun helloApi(@RequestParam(defaultValue = "World") name: String): Map<String, String> {
-        var time = LocalTime.now(clock).hour
+        val time = clock.instant().atZone(ZoneOffset.UTC).hour
         var greeting = when (time) {
             in 6..<13 -> "morning"
             in 13..<21 -> "afternoon"

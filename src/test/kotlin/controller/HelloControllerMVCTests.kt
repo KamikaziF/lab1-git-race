@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.time.Clock
 import java.time.Instant
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 @WebMvcTest(HelloController::class, HelloApiController::class)
 class HelloControllerMVCTests {
@@ -62,6 +64,42 @@ class HelloControllerMVCTests {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.message", equalTo("Good morning, Test!")))
             .andExpect(jsonPath("$.timestamp").exists())
+    }
+    
+    @ParameterizedTest(name = " at {0} the greeting should be \"{1}\"")
+    @CsvSource(
+        "2026-09-17T05:59:00Z, night",
+        "2026-09-17T06:00:00Z, morning",
+        "2026-09-17T12:59:00Z, morning",
+        "2026-09-17T13:00:00Z, afternoon",
+        "2026-09-17T20:59:00Z, afternoon",
+        "2026-09-17T21:00:00Z, night",
+        "2026-09-17T23:59:00Z, night"
+    )
+    fun `should return time-based greeting on personalized home page`(instant: String, expectedGreeting: String) {
+        `when`(clock.instant()).thenReturn(Instant.parse(instant))
+
+        mockMvc.perform(get("/").param("name", "Ana"))
+            .andExpect(status().isOk)
+            .andExpect(model().attribute("message", equalTo("Good $expectedGreeting, Ana!")))
+    }
+
+    @ParameterizedTest(name = "at {0} /api/hello should be greeting \"{1}\"")
+    @CsvSource(
+        "2026-09-17T05:59:00Z, night",
+        "2026-09-17T06:00:00Z, morning",
+        "2026-09-17T12:59:00Z, morning",
+        "2026-09-17T13:00:00Z, afternoon",
+        "2026-09-17T20:59:00Z, afternoon",
+        "2026-09-17T21:00:00Z, night",
+        "2026-09-17T23:59:00Z, night"
+    )
+    fun `should return time-based greeting from API endpoint`(instant: String, expectedGreeting: String) {
+        `when`(clock.instant()).thenReturn(Instant.parse(instant))
+
+        mockMvc.perform(get("/api/hello").param("name", "Ana"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.message", equalTo("Good $expectedGreeting, Ana!")))
     }
 }
 
