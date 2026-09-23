@@ -19,6 +19,8 @@ Do not invent a percentage of “AI vs original” lines. Empty or fake disclosu
 ## How I verified
 
 [Commands (`./gradlew check`), what failed first, what you fixed. You remain accountable for correctness.]
+- Note that it always return spanish. It was a Springboot issue where it just tried to get the locale by it's own, not checking the localeResolver configured.
+- solved by using the .getLocale method, instead of getting the locale as a parameter
 
 ## AI disclosure
 

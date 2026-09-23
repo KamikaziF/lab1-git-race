@@ -10,18 +10,36 @@ import java.time.Instant
 import java.time.ZoneId
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.springframework.context.i18n.LocaleContextHolder
+import org.springframework.context.support.StaticMessageSource
+import java.util.Locale
 
 class HelloControllerUnitTests {
     private lateinit var controller: HelloController
     private lateinit var model: Model
     private lateinit var fixedClock: Clock
+    private lateinit var messageSource: StaticMessageSource
     
     @BeforeEach
     fun setup() {
         fixedClock = Clock.fixed(Instant.parse("2026-09-17T09:00:00Z"), ZoneId.of("UTC"))
-        controller = HelloController("Test Message", fixedClock)
+        messageSource = buildMessageSource()
+        controller = HelloController("Test Message", fixedClock, messageSource)
         model = ExtendedModelMap()
+        //Fix the locale for these tests, so it won't get the locale of the local machine
+        LocaleContextHolder.setLocale(Locale.ENGLISH)
     }
+    
+    private fun buildMessageSource(): StaticMessageSource =
+        StaticMessageSource().apply {
+            addMessage("greeting.morning", Locale.ENGLISH, "Good morning")
+            addMessage("greeting.afternoon", Locale.ENGLISH, "Good afternoon")
+            addMessage("greeting.night", Locale.ENGLISH, "Good night")
+            addMessage("greeting.morning", Locale("es"), "Buenos días")
+            addMessage("greeting.afternoon", Locale("es"), "Buenas tardes")
+            addMessage("greeting.night", Locale("es"), "Buenas noches")
+        }
+
     
     @Test
     fun `should return welcome view with default message`() {
@@ -43,7 +61,7 @@ class HelloControllerUnitTests {
     
     @Test
     fun `should return API response with timestamp`() {
-        val apiController = HelloApiController(fixedClock) 
+        val apiController = HelloApiController(fixedClock, messageSource)
         val response = apiController.helloApi("Test")
         
         assertThat(response).containsKey("message")
@@ -65,23 +83,40 @@ class HelloControllerUnitTests {
     )
     fun `should return correct time-based greeting for personalized message`(instant: String, expectedGreeting: String) {
         val clockAtInstant = Clock.fixed(Instant.parse(instant), ZoneId.of("UTC"))
-        val testController = HelloController("Test Message", clockAtInstant)
+        val apiController = HelloApiController(clockAtInstant, messageSource)
         val testModel = ExtendedModelMap()
 
-        val view = testController.welcome(testModel, "Ana")
+        val response = apiController.helloApi("Ana")
 
-        assertThat(view).isEqualTo("welcome")
-        assertThat(testModel.getAttribute("message")).isEqualTo("Good $expectedGreeting, Ana!")
+        assertThat(response["message"]).isEqualTo("Good $expectedGreeting, Ana!")
     }
 
     @Test
     fun `default message should not depend on time of day`() {
         val clockAtMidnight = Clock.fixed(Instant.parse("2026-09-17T00:00:00Z"), ZoneId.of("UTC"))
-        val testController = HelloController("Test Message", clockAtMidnight)
+        val testController = HelloController("Test Message", clockAtMidnight, messageSource)
         val testModel = ExtendedModelMap()
 
         testController.welcome(testModel, "")
 
         assertThat(testModel.getAttribute("message")).isEqualTo("Test Message")
+    }
+    
+    @Test
+    fun `should return greeting in spanish when locale is es`() {
+        val testModel = ExtendedModelMap()
+
+        controller.welcome(testModel, "Ana")
+
+        assertThat(testModel.getAttribute("message")).isEqualTo("Buenos días, Ana!")
+    }
+
+    @Test
+    fun `should return greeting in english by default when no locale is given`() {
+        val testModel = ExtendedModelMap()
+
+        controller.welcome(testModel, "Ana")
+
+        assertThat(testModel.getAttribute("message")).isEqualTo("Good morning, Ana!")
     }
 }

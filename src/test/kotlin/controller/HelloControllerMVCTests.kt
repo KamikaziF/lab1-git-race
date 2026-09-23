@@ -17,6 +17,7 @@ import java.time.Instant
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.springframework.mock.web.MockHttpSession
 
 @WebMvcTest(HelloController::class, HelloApiController::class)
 class HelloControllerMVCTests {
@@ -100,6 +101,39 @@ class HelloControllerMVCTests {
         mockMvc.perform(get("/api/hello").param("name", "Ana"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.message", equalTo("Good $expectedGreeting, Ana!")))
+    }
+    
+    @Test
+    fun `should return home page in spanish when lang=es`() {
+        mockMvc.perform(get("/").param("name", "Ana").param("lang", "es"))
+            .andExpect(status().isOk)
+            .andExpect(model().attribute("message", equalTo("Buenos días, Ana!")))
+    }
+
+    @Test
+    fun `should return API response in spanish when lang=es`() {
+        mockMvc.perform(get("/api/hello").param("name", "Ana").param("lang", "es"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.message", equalTo("Buenos días, Ana!")))
+    }
+
+    @Test
+    fun `should fall back to english when requested language is not supported`() {
+        mockMvc.perform(get("/").param("name", "Ana").param("lang", "fr"))
+            .andExpect(status().isOk)
+            .andExpect(model().attribute("message", equalTo("Good morning, Ana!")))
+    }
+
+    @Test
+    fun `should keep chosen language across requests without repeating lang param`() {
+        val result = mockMvc.perform(get("/").param("name", "Ana").param("lang", "es"))
+            .andExpect(model().attribute("message", equalTo("Buenos días, Ana!")))
+            .andReturn()
+
+        val session = result.request.session as MockHttpSession
+
+        mockMvc.perform(get("/").param("name", "Ana").session(session))
+            .andExpect(model().attribute("message", equalTo("Buenos días, Ana!")))
     }
 }
 
