@@ -7,13 +7,16 @@ import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.Clock
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+
 
 @Controller
 class HelloController(
-    @param:Value($$"${app.message:Hello World}") 
-    private val message: String
+    @param:Value($$"${app.message:Hello World}") private val message: String,
+    private val clock: Clock = Clock.systemDefaultZone()
 ) {
     
     /**
@@ -27,7 +30,13 @@ class HelloController(
         model: Model,
         @RequestParam(defaultValue = "") name: String
     ): String {
-        val greeting = if (name.isNotBlank()) "Hello, $name!" else message
+        val time = LocalTime.now(clock).hour
+        var timeGreeting = when (time) {
+            in 6..<13 -> "morning"
+            in 13..<21 -> "afternoon"
+            else -> "night"
+        }
+        val greeting = if (name.isNotBlank()) "Good $timeGreeting, $name!" else message
         model.addAttribute("message", greeting)
         model.addAttribute("name", name)
         return "welcome"
@@ -46,10 +55,14 @@ class HelloApiController {
      */
     @GetMapping("/api/hello", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun helloApi(@RequestParam(defaultValue = "World") name: String): Map<String, String> {
-        var time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH"))
-        
+        var time = LocalTime.now().hour
+        var greeting = when (time) {
+            in 6..<13 -> "morning"
+            in 13..<21 -> "afternoon"
+            else -> "night"
+        }
         return mapOf(
-            "message" to "Hello, $name!",
+            "message" to "Good $greeting, $name!",
             "timestamp" to "$time"
         )
     }
