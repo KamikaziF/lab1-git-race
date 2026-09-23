@@ -1,6 +1,7 @@
 package es.unizar.webeng.hello.controller
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.ui.Model
@@ -40,6 +41,10 @@ class HelloControllerUnitTests {
             addMessage("greeting.night", Locale("es"), "Buenas noches")
         }
 
+    @AfterEach
+    fun tearDown() {
+        LocaleContextHolder.resetLocaleContext()
+    }
     
     @Test
     fun `should return welcome view with default message`() {
@@ -104,6 +109,7 @@ class HelloControllerUnitTests {
     
     @Test
     fun `should return greeting in spanish when locale is es`() {
+        LocaleContextHolder.setLocale(Locale("es"))
         val testModel = ExtendedModelMap()
 
         controller.welcome(testModel, "Ana")
