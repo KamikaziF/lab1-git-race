@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.time.Clock
 import java.time.Instant
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 
 @WebMvcTest(HelloController::class, HelloApiController::class)
 class HelloControllerMVCTests {
@@ -23,7 +24,7 @@ class HelloControllerMVCTests {
     @Autowired
     private lateinit var mockMvc: MockMvc
     
-    @Autowired
+    @MockitoBean
     private lateinit var clock: Clock
     
     @BeforeEach
@@ -49,7 +50,7 @@ class HelloControllerMVCTests {
             .andDo(print())
             .andExpect(status().isOk)
             .andExpect(view().name("welcome"))
-            .andExpect(model().attribute("message", equalTo("Hello, Developer!")))
+            .andExpect(model().attribute("message", equalTo("Good morning, Developer!")))
             .andExpect(model().attribute("name", equalTo("Developer")))
     }
     
@@ -59,7 +60,7 @@ class HelloControllerMVCTests {
             .andDo(print())
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.message", equalTo("Hello, Test!")))
+            .andExpect(jsonPath("$.message", equalTo("Good morning, Test!")))
             .andExpect(jsonPath("$.timestamp").exists())
     }
 }

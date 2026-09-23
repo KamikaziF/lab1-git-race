@@ -5,14 +5,19 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.ui.Model
 import org.springframework.ui.ExtendedModelMap
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 class HelloControllerUnitTests {
     private lateinit var controller: HelloController
     private lateinit var model: Model
+    private lateinit var fixedClock: Clock
     
     @BeforeEach
     fun setup() {
-        controller = HelloController("Test Message")
+        fixedClock = Clock.fixed(Instant.parse("2026-09-17T09:00:00Z"), ZoneId.of("UTC"))
+        controller = HelloController("Test Message", fixedClock)
         model = ExtendedModelMap()
     }
     
@@ -36,12 +41,12 @@ class HelloControllerUnitTests {
     
     @Test
     fun `should return API response with timestamp`() {
-        val apiController = HelloApiController()
+        val apiController = HelloApiController(fixedClock) 
         val response = apiController.helloApi("Test")
         
         assertThat(response).containsKey("message")
         assertThat(response).containsKey("timestamp")
-        assertThat(response["message"]).isEqualTo("Hello, Test!")
+        assertThat(response["message"]).isEqualTo("Good morning, Test!")
         assertThat(response["timestamp"]).isNotNull()
     }
 }

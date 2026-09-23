@@ -44,7 +44,9 @@ class HelloController(
 }
 
 @RestController
-class HelloApiController {
+class HelloApiController (
+    private val clock: Clock = Clock.systemDefaultZone()
+) {
     
     /**
      * Function mapped to the API route "/api/hello". 
@@ -55,7 +57,7 @@ class HelloApiController {
      */
     @GetMapping("/api/hello", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun helloApi(@RequestParam(defaultValue = "World") name: String): Map<String, String> {
-        var time = LocalTime.now().hour
+        var time = LocalTime.now(clock).hour
         var greeting = when (time) {
             in 6..<13 -> "morning"
             in 13..<21 -> "afternoon"
